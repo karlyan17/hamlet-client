@@ -3,18 +3,27 @@
 package main
 
 import (
-    "fmt"
-    "net"
     "hamlet/sessions"
+    "hamlet-client/graphx"
+    "net"
     "encoding/json"
     "bufio"
     "time"
     //"strings"
     //"os"
     "log"
+    "github.com/nsf/termbox-go"
 )
 
+//global variables (yeah those are bad, I know)
 var session sessions.Session
+var gfx_options graphx.Options
+
+//termbox layout
+const backgroundColor = 1
+const textColor = 2
+
+
 func getState() {
     for {
         var remote_session sessions.Session
@@ -25,31 +34,37 @@ func getState() {
         err = json.Unmarshal(srv_message, &remote_session)
         session.Account = remote_session.Account
         session.ID = remote_session.ID
-        log.Print("\r", session)
         time.Sleep(500 * time.Millisecond)
     }
 
 }
 
+func InputHandler(opts *graphx.Options) {
+    for {
+        event := <-opts.Events
+        if event.Type == termbox.EventKey {
+            opts.Input += string(event.Ch)
+        }
+    }
+}
+
 func main() {
+    //start termbox display thingy
+    gfx_options = graphx.Options{
+        BG: backgroundColor,
+        FG: textColor,
+    }
+    gfx_options.Events = make(chan termbox.Event)
+    graphx.Init(&gfx_options)
+
+    //establish connection
     conn,_ := net.Dial("tcp", "localhost:6666")
     rw := bufio.NewReadWriter(bufio.NewReader(conn), bufio.NewWriter(conn))
     session.Conn_rw = rw
-    //reader := bufio.NewReader(os.Stdin)
-    getState()
+    go getState()
+    go InputHandler(&gfx_options)
 
     for {
-        srv_message,err := rw.ReadBytes('\n')
-        if err != nil {
-            log.Println("ERROR reading message: ",err)
-        }
-        fmt.Println(string(srv_message))
-        fmt.Print("> ")
-        //name,_ := reader.ReadString('\n')
-        //name = strings.Replace(name, "\n", "", -1)
-        //message,_ := json.Marshal(name)
-        //rw.Write(message)
-        //rw.WriteByte('\n')
-        //rw.Flush()
+        graphx.Render(session, gfx_options)
     }
 }
