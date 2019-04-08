@@ -9,6 +9,7 @@ import (
     "encoding/json"
     "bufio"
     "time"
+    "os"
     //"strings"
     //"os"
     "log"
@@ -42,7 +43,10 @@ func getState() {
 func InputHandler(opts *graphx.Options) {
     for {
         event := <-opts.Events
-        if event.Type == termbox.EventKey {
+        opts.Monitor = event
+        if event.Key == 27 {
+            os.Exit(0)
+        } else if event.Ch != 0 {
             opts.Input += string(event.Ch)
         }
     }

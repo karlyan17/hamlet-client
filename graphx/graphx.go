@@ -14,6 +14,7 @@ type Options struct {
     FG termbox.Attribute
     Input string
     Events chan termbox.Event
+    Monitor termbox.Event
 }
 
 func Render(session sessions.Session, opts Options) {
@@ -21,6 +22,11 @@ func Render(session sessions.Session, opts Options) {
     x := 1
     for _,char := range(fmt.Sprint(session)) {
         termbox.SetCell(x, 1, char, opts.FG, opts.BG)
+        x++
+    }
+    x = 1
+    for _,char := range(fmt.Sprint(opts.Monitor)) {
+        termbox.SetCell(x, 2, char, opts.FG, opts.BG)
         x++
     }
     termbox.SetCell(1, 3, '>', opts.FG, opts.BG)
@@ -45,4 +51,3 @@ func Init(options *Options) {
         }
     }()
 }
-
